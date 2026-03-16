@@ -50,7 +50,7 @@ export function cjsInterop(options: CjsInteropOptions): Plugin {
 
 	return {
 		name: "cjs-interop",
-		enforce: "post",
+		enforce: "pre",
 		apply: apply === "both" ? undefined : apply,
 
 		configResolved(config) {
@@ -64,7 +64,6 @@ export function cjsInterop(options: CjsInteropOptions): Plugin {
 			const { program: ast } = await parse(id, code);
 
 			const toBeFixed: any[] = [];
-			const preambles: string[] = [];
 			let hasDynamicImportsToFix = false;
 
 			const { walk } = await walker;
@@ -146,17 +145,15 @@ export function cjsInterop(options: CjsInteropOptions): Plugin {
 							`${name} as ${defaultExportSpecifier.exported.name}}`,
 						);
 					}
-					preambles.push(
-						`const { ${importDestructurings.join(
-							", ",
-						)} } = ${name}?.default?.__esModule ? ${name}.default : ${name};`,
-					);
-					const replacementNamedImports = `import ${name} from ${JSON.stringify(
+					const constDecl = `const { ${importDestructurings.join(
+						", ",
+					)} } = ${name}?.default?.__esModule ? ${name}.default : ${name};`;
+					const replacementImport = `import ${name} from ${JSON.stringify(
 						node.source.value,
 					)};`;
-					const replacementNamedExports = `export { ${exportDestructurings.join(", ")} };`;
+					const replacementExport = `export { ${exportDestructurings.join(", ")} };`;
 
-					const replacement = [replacementNamedImports, replacementNamedExports]
+					const replacement = [replacementImport, constDecl, replacementExport]
 						.filter(Boolean)
 						.join("\n");
 
@@ -196,20 +193,19 @@ export function cjsInterop(options: CjsInteropOptions): Plugin {
 				if (!changed) {
 					continue;
 				}
+				let constDecl: string;
 				if (!isNamespaceImport)
-					preambles.push(
-						`const { ${destructurings.join(
-							", ",
-						)} } = ${name}?.default?.__esModule ? ${name}.default : ${name};`,
-					);
+					constDecl = `const { ${destructurings.join(
+						", ",
+					)} } = ${name}?.default?.__esModule ? ${name}.default : ${name};`;
 				else
-					preambles.push(
-						`const ${destructurings[0]} = ${name}?.default?.__esModule ? ${name}.default : ${name};`,
-					);
+					constDecl = `const ${destructurings[0]} = ${name}?.default?.__esModule ? ${name}.default : ${name};`;
 
-				const replacement = `import ${name} from ${JSON.stringify(
+				const importDecl = `import ${name} from ${JSON.stringify(
 					node.source.value,
 				)};`;
+
+				const replacement = `${importDecl}\n${constDecl}`;
 
 				if (sourcemaps) {
 					ms!.overwrite(node.start, node.end, replacement);
@@ -227,17 +223,12 @@ export function cjsInterop(options: CjsInteropOptions): Plugin {
 				}
 			}
 
-			const preamble = preambles.reverse().join("\n") + "\n";
 			if (sourcemaps) {
-				ms!.prepend(preamble);
-
 				return {
 					code: ms!.toString(),
 					map: ms!.generateMap({ hires: true }),
 				};
 			} else {
-				code = preamble + code;
-
 				return {
 					code,
 				};

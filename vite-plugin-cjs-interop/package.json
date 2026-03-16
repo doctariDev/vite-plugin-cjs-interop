@@ -43,10 +43,10 @@
     "publint": "^0.3.18",
     "tsdown": "0.21.1",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1",
+    "vite": "^8.0.0",
     "vitest": "^4.0.18"
   },
   "peerDependencies": {
-    "vite": "4 || 5 || 6 || 7"
+    "vite": "4 || 5 || 6 || 7 || 8"
   }
 }
