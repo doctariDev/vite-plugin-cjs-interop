@@ -11,8 +11,8 @@ test("transforms default import", async () => {
 
 const INPUT = `import foo, { named, named2 as renamed } from "foo";`;
 
-const OUTPUT = `const { default: foo = __cjsInterop1__, named, named2: renamed } = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;
-import __cjsInterop1__ from "foo";`;
+const OUTPUT = `import __cjsInterop1__ from "foo";
+const { default: foo = __cjsInterop1__, named, named2: renamed } = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;`;
 
 test("transforms multiple imports", async () => {
 	const plugin = cjsInterop({ dependencies: ["foo", "bar"] });
@@ -27,11 +27,11 @@ const MULTIPLE_INPUT = `
 	import bar, { barNamed, barNamed2 as barRenamed } from "bar";
 `;
 
-const MULTIPLE_OUTPUT = `const { default: foo = __cjsInterop2__, named, named2: renamed } = __cjsInterop2__?.default?.__esModule ? __cjsInterop2__.default : __cjsInterop2__;
-const { default: bar = __cjsInterop1__, barNamed, barNamed2: barRenamed } = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;
-
+const MULTIPLE_OUTPUT = `
 	import __cjsInterop2__ from "foo";
+const { default: foo = __cjsInterop2__, named, named2: renamed } = __cjsInterop2__?.default?.__esModule ? __cjsInterop2__.default : __cjsInterop2__;
 	import __cjsInterop1__ from "bar";
+const { default: bar = __cjsInterop1__, barNamed, barNamed2: barRenamed } = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;
 `;
 
 test("Will skip dependencies specified with a negative glob", async () => {
@@ -41,10 +41,10 @@ test("Will skip dependencies specified with a negative glob", async () => {
 		ssr: true,
 	});
 
-	const EXPECTED_OUTPUT_WITHOUT_FOO = `const { default: bar = __cjsInterop1__, barNamed, barNamed2: barRenamed } = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;
-
+	const EXPECTED_OUTPUT_WITHOUT_FOO = `
 	import foo, { named, named2 as renamed } from "foo";
 	import __cjsInterop1__ from "bar";
+const { default: bar = __cjsInterop1__, barNamed, barNamed2: barRenamed } = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;
 `;
 
 	expect(output.code).toBe(EXPECTED_OUTPUT_WITHOUT_FOO);
@@ -60,8 +60,8 @@ test("transforms namespace import", async () => {
 
 const NAMESPACE_INPUT = `import * as foo from "foo";`;
 
-const NAMESPACE_OUTPUT = `const foo = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;
-import __cjsInterop1__ from "foo";`;
+const NAMESPACE_OUTPUT = `import __cjsInterop1__ from "foo";
+const foo = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;`;
 
 test("supports globs in dependencies list", async () => {
 	const plugin = cjsInterop({ dependencies: ["foo/*"] });
@@ -76,11 +76,11 @@ const GLOB_INPUT = `
 	import fooY, { namedY, named2 as renamedY } from "foo/y";
 `;
 
-const GLOB_OUTPUT = `const { default: fooX = __cjsInterop2__, namedX, named2: renamedX } = __cjsInterop2__?.default?.__esModule ? __cjsInterop2__.default : __cjsInterop2__;
-const { default: fooY = __cjsInterop1__, namedY, named2: renamedY } = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;
-
+const GLOB_OUTPUT = `
 	import __cjsInterop2__ from "foo/x";
+const { default: fooX = __cjsInterop2__, namedX, named2: renamedX } = __cjsInterop2__?.default?.__esModule ? __cjsInterop2__.default : __cjsInterop2__;
 	import __cjsInterop1__ from "foo/y";
+const { default: fooY = __cjsInterop1__, namedY, named2: renamedY } = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;
 `;
 
 test("supports dynamic imports", async () => {
@@ -99,8 +99,7 @@ const DYNAMIC_INPUT = `
 	});
 `;
 
-const DYNAMIC_OUTPUT = `
-import { __cjs_dyn_import__ } from "virtual:cjs-dyn-import";
+const DYNAMIC_OUTPUT = `import { __cjs_dyn_import__ } from "virtual:cjs-dyn-import";
 
 	const importPromise = import("foo").then(__cjs_dyn_import__).then(({ default: barDefault, barNamed }) => {
 		// Use barDefault and barNamed here
@@ -110,9 +109,9 @@ import { __cjs_dyn_import__ } from "virtual:cjs-dyn-import";
 test("transforms re-export", async () => {
 	const REEXPORT_INPUT = `export { namedX, named2 as renamedX, default } from "foo";`;
 
-	const REEXPORT_OUTPUT = `const { namedX: __cjsInteropSpecifier1__, named2: __cjsInteropSpecifier2__ } = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;
-import __cjsInterop1__ from "foo";
-export { __cjsInteropSpecifier1__ as namedX, __cjsInteropSpecifier2__ as renamedX, __cjsInterop1__ as default} };`;
+	const REEXPORT_OUTPUT = `import __cjsInterop1__ from "foo";
+const { namedX: __cjsInteropSpecifier1__, named2: __cjsInteropSpecifier2__ } = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;
+export { __cjsInteropSpecifier1__ as namedX, __cjsInteropSpecifier2__ as renamedX, __cjsInterop1__ as default };`;
 
 	const plugin = cjsInterop({ dependencies: ["foo"] });
 
@@ -152,9 +151,9 @@ const MULTIPLE_SAME_PACKAGE_INPUT = `
 	import * as Foo from "foo";
 `;
 
-const MULTIPLE_SAME_PACKAGE_OUTPUT = `const { default: foo = __cjsInterop2__, named, named2: renamed } = __cjsInterop2__?.default?.__esModule ? __cjsInterop2__.default : __cjsInterop2__;
-const Foo = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;
-
+const MULTIPLE_SAME_PACKAGE_OUTPUT = `
 	import __cjsInterop2__ from "foo";
+const { default: foo = __cjsInterop2__, named, named2: renamed } = __cjsInterop2__?.default?.__esModule ? __cjsInterop2__.default : __cjsInterop2__;
 	import __cjsInterop1__ from "foo";
+const Foo = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;
 `;
