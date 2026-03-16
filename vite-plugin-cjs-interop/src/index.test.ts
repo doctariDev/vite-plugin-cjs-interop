@@ -111,7 +111,7 @@ test("transforms re-export", async () => {
 
 	const REEXPORT_OUTPUT = `import __cjsInterop1__ from "foo";
 const { namedX: __cjsInteropSpecifier1__, named2: __cjsInteropSpecifier2__ } = __cjsInterop1__?.default?.__esModule ? __cjsInterop1__.default : __cjsInterop1__;
-export { __cjsInteropSpecifier1__ as namedX, __cjsInteropSpecifier2__ as renamedX, __cjsInterop1__ as default} };`;
+export { __cjsInteropSpecifier1__ as namedX, __cjsInteropSpecifier2__ as renamedX, __cjsInterop1__ as default };`;
 
 	const plugin = cjsInterop({ dependencies: ["foo"] });
 

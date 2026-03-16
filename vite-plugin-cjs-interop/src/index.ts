@@ -142,7 +142,7 @@ export function cjsInterop(options: CjsInteropOptions): Plugin {
 					}
 					if (defaultExportSpecifier) {
 						exportDestructurings.push(
-							`${name} as ${defaultExportSpecifier.exported.name}}`,
+							`${name} as ${defaultExportSpecifier.exported.name}`,
 						);
 					}
 					const constDecl = `const { ${importDestructurings.join(
